@@ -29,6 +29,7 @@ from pwd import getpwnam
 import getpass
 import ovirtsdk4
 from ovirt_iso_uploader import config
+from glfs_api import GlfsApi
 
 APP_NAME = "ovirt-iso-uploader"
 VERSION = "4.1.0"
@@ -51,6 +52,7 @@ TEST = '/usr/bin/test'
 DEFAULT_CONFIGURATION_FILE = '/etc/ovirt-engine/isouploader.conf'
 PERMS_MASK = '640'
 PYTHON = '/usr/bin/python'
+GFCP = '/usr/bin/gfcp'
 
 # {Logging system
 STREAM_LOG_FORMAT = '%(levelname)s: %(message)s'
@@ -1146,6 +1148,18 @@ class ISOUploader(object):
                     'through SSH'
                 ),
             )
+        elif domain_type in ('glusterfs',):
+            # Glusterfs support
+            for filename in self.configuration.files:
+                remote = "%s/%s/%s" % (id, DEFAULT_IMAGES_DIR, filename)
+                logging.info(_("Start uploading %s "), filename)
+                try:
+                    fs = GlfsApi(address, path)
+                    fs.upload(filename, remote)
+                    fs.umount()
+                except Exception, e:
+                    ExitCodes.exit_code = ExitCodes.CRITICAL
+                    logging.error(e)
         else:
             # NFS support.
             tmpDir = tempfile.mkdtemp()
