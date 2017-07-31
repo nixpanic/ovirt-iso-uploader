@@ -17,7 +17,7 @@
 import ctypes
 import os
 
-TENMB = 10*1024*1024*1024
+TENMB = 10*1024*1024
 
 
 class GlfsApi:
@@ -98,7 +98,12 @@ class GlfsApi:
                 "Failed to truncate %s: %s" % (remote, os.strerror(err)))
 
         with open(local, "r") as local_fd:
-            for chunk in iter(local_fd.read(TENMB)):
+            while True:
+                chunk = local_fd.read(TENMB)
+                if len(chunk) == 0:
+                    # End-Of-File reached
+                    break
+
                 ret = self._glfs_write(remote_fd, chunk, len(chunk), 0)
                 if ret == -1:
                     err = ctypes.get_errno()
